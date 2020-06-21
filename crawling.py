@@ -1,10 +1,11 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup as bs
+from mongo.mongodb import MongoCon
 
-html = urlopen('https://www.hallym.or.kr/hallymuniv_sub.asp?left_menu=left_health&screen=ptp118=1')
-bsObject = bs(html, "html.parser")
+db = MongoCon()
 
-base_url = 'https://www.hallym.or.kr/hallymuniv_sub.asp?left_menu=left_health&screen=ptp118&alphabet='
+ref_url = 'https://www.hallym.or.kr'
+base_url = ref_url + '/hallymuniv_sub.asp?left_menu=left_health&screen=ptp118&alphabet='
 url_list = [
     'A',
     'B',
@@ -45,7 +46,7 @@ def get_all_term(elem):
         term_one = term_list[i]
 
         splited = term_one.text.split(':')
-        word_list.append({'word': splited[0].strip(), 'mean': splited[1].strip()})
+        word_list.append({'word': splited[0].strip(), 'mean': splited[1].strip(), 'ref': ref_url})
 
     return word_list
 
@@ -62,7 +63,6 @@ for i in range(len(url_list)):
         temp_url = url + "&search_type=&search_text=&page=" + str(j + 1)
         html = urlopen(temp_url)
 
-        print(temp_url)
         bsObject = bs(html, "html.parser")
         divs = bsObject.find_all('div')
         temp_word_list = get_all_term(bsObject)
@@ -72,5 +72,5 @@ for i in range(len(url_list)):
 
         word_list.extend(temp_word_list)
 
-    print(word_list)
-    break
+    db.update_word(word_list)
+    print('{} : {} is inserted'.format(url_list[i], len(word_list)))
